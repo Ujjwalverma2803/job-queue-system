@@ -1,6 +1,6 @@
 # Distributed Job Queue System
 
-A production-grade distributed job queue system built with Node.js, TypeScript, Bull, Redis, and PostgreSQL. Features priority queuing, exponential backoff retry, dead letter queue, tiered rate limiting, and real-time job tracking — deployed on Render with GitHub Actions CI/CD.
+A production-grade distributed job queue system built with Node.js, TypeScript, Bull, Redis, and PostgreSQL. Features priority queuing, exponential backoff retry, dead letter queue, tiered rate limiting, and full job lifecycle management.
 
 ## Live Demo
 
@@ -10,22 +10,24 @@ A production-grade distributed job queue system built with Node.js, TypeScript, 
 ---
 
 ## Architecture
+```
 Client Request
-↓
+      ↓
 Express API (Port 3000)
-↓
+      ↓
 API Key Authentication
-↓
+      ↓
 Tier-based Rate Limiter
-↓
+      ↓
 Bull Queue (Redis broker)
-↓ ↓
+      ↓ ↓
 PostgreSQL Worker Service
 (job stored) (job processed)
-↓
+      ↓
 Result stored in PostgreSQL
-↓
+      ↓
 Client polls GET /api/jobs/:id
+```
 
 ---
 
@@ -75,8 +77,9 @@ Client polls GET /api/jobs/:id
 ## Authentication
 
 Pass your API key in every request header:
+```
 x-api-key: your-api-key-here
-
+```
 
 | Tier | API Key | Rate Limit | High Priority |
 |---|---|---|---|
@@ -98,9 +101,10 @@ x-api-key: your-api-key-here
     "body": "Email content here"
   }
 }
-Image Processing Job
-JSON
+```
 
+### Image Processing Job
+```json
 {
   "type": "image",
   "priority": "low",
@@ -109,9 +113,10 @@ JSON
     "operations": ["resize", "compress"]
   }
 }
-Report Generation Job
-JSON
+```
 
+### Report Generation Job
+```json
 {
   "type": "report",
   "priority": "high",
@@ -121,14 +126,23 @@ JSON
     "filters": {}
   }
 }
-Priority System
-Priority	Processing Order	Available To
-high	First (Bull priority 1)	Premium tier only
-medium	Default (Bull priority 5)	All tiers
-low	Last (Bull priority 10)	All tiers
-Retry and Dead Letter Queue
-text
+```
 
+---
+
+## Priority System
+
+| Priority | Processing Order | Available To |
+|---|---|---|
+| high | First (Bull priority 1) | Premium tier only |
+| medium | Default (Bull priority 5) | All tiers |
+| low | Last (Bull priority 10) | All tiers |
+
+---
+
+## Retry and Dead Letter Queue
+
+```
 Job fails on attempt 1
       ↓
 Wait 2 seconds (exponential backoff)
@@ -142,9 +156,15 @@ Retry attempt 3
 All attempts exhausted
       ↓
 Job marked as failed — moved to dead letter
+      ↓
 Status updated in PostgreSQL
-Job Lifecycle
+```
 
+---
+
+## Job Lifecycle
+
+```
 submitted → pending → active → completed
                    ↓
                 failed (retried up to 3x)
@@ -152,31 +172,48 @@ submitted → pending → active → completed
               dead letter (all attempts exhausted)
 
 pending → cancelled (via DELETE /api/jobs/:id)
-Quick Start
-Prerequisites
-Docker Desktop
-Node.js 18+
-Run Locally
+```
 
+---
+
+## Quick Start
+
+### Prerequisites
+- Docker Desktop
+- Node.js 18+
+
+### Run Locally
+
+```bash
 git clone https://github.com/Ujjwalverma2803/job-queue-system
 cd job-queue-system
 cp .env.example .env
 docker-compose up --build
-Services Available At
-API: http://localhost:3000
-Bull Board Dashboard: http://localhost:3001
-Worker: processing jobs in background
-Environment Variables
-Variable	Description
-DATABASE_URL	PostgreSQL connection string
-REDIS_URL	Redis connection string
-JWT_SECRET	Secret for future JWT auth
-NODE_ENV	development or production
-API_PORT	API server port (default 3000)
-WORKER_CONCURRENCY	Jobs processed simultaneously per queue
-Example API Calls
-Submit an email job
+```
 
+### Services Available At
+- **API:** http://localhost:3000
+- **Bull Board Dashboard:** http://localhost:3001
+- **Worker:** processing jobs in background
+
+### Environment Variables
+
+| Variable | Description |
+|---|---|
+| DATABASE_URL | PostgreSQL connection string |
+| REDIS_URL | Redis connection string |
+| JWT_SECRET | Secret for future JWT auth |
+| NODE_ENV | development or production |
+| API_PORT | API server port (default 3000) |
+| WORKER_CONCURRENCY | Jobs processed simultaneously per queue |
+
+---
+
+## Example API Calls
+
+### Submit an email job
+
+```bash
 curl -X POST https://job-queue-api-wuz7.onrender.com/api/jobs \
   -H "Content-Type: application/json" \
   -H "x-api-key: free-api-key-123" \
@@ -188,16 +225,25 @@ curl -X POST https://job-queue-api-wuz7.onrender.com/api/jobs \
       "body": "Test email"
     }
   }'
-Check job status
+```
 
+### Check job status
+
+```bash
 curl https://job-queue-api-wuz7.onrender.com/api/jobs/JOB_ID \
   -H "x-api-key: free-api-key-123"
-Get queue statistics
+```
 
+### Get queue statistics
+
+```bash
 curl https://job-queue-api-wuz7.onrender.com/api/stats \
   -H "x-api-key: free-api-key-123"
-Submit high priority job (premium only)
+```
 
+### Submit high priority job (premium only)
+
+```bash
 curl -X POST https://job-queue-api-wuz7.onrender.com/api/jobs \
   -H "Content-Type: application/json" \
   -H "x-api-key: premium-api-key-456" \
@@ -209,12 +255,20 @@ curl -X POST https://job-queue-api-wuz7.onrender.com/api/jobs \
       "date_range": "2026-06"
     }
   }'
-Cancel a pending job
+```
 
+### Cancel a pending job
+
+```bash
 curl -X DELETE https://job-queue-api-wuz7.onrender.com/api/jobs/JOB_ID \
   -H "x-api-key: free-api-key-123"
-Project Structure
+```
 
+---
+
+## Project Structure
+
+```
 job-queue-system/
 ├── docker-compose.yml
 ├── .env.example
@@ -263,31 +317,29 @@ job-queue-system/
 │               └── logger.ts
 └── tests/
     └── jobs.test.ts
-Deployment
-Production Stack
-
-API Service    → Render (Web Service)
-Worker Service → Render (Web Service)
-Database       → Supabase PostgreSQL
-Message Broker → Upstash Redis
-CI/CD          → GitHub Actions
-Deploy Your Own
-
-1. Fork this repo
-2. Create accounts on Render, Supabase, Upstash
-3. Create PostgreSQL on Supabase — run database/init.sql
-4. Create Redis on Upstash
-5. Deploy services/api as Web Service on Render
-6. Deploy services/worker as Web Service on Render
-7. Add environment variables in Render dashboard
-8. Both services deploy automatically on every push
-
+```
 
 ---
 
-## Push README
+## Deployment
 
-```powershell
-git add .
-git commit -m "add production README"
-git push
+### Production Stack
+
+- **API Service** → Render (Web Service)
+- **Worker Service** → Render (Web Service)
+- **Database** → Supabase PostgreSQL
+- **Message Broker** → Upstash Redis
+- **CI/CD** → GitHub Actions
+
+### Deploy Your Own
+
+1. Fork this repo
+2. Create accounts on Render, Supabase, Upstash
+3. Create PostgreSQL on Supabase — run `database/init.sql`
+4. Create Redis on Upstash
+5. Deploy `services/api` as Web Service on Render
+6. Deploy `services/worker` as Web Service on Render
+7. Add environment variables in Render dashboard
+8. Both services deploy automatically on every push
+
+---
