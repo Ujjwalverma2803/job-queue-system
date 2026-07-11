@@ -1,9 +1,11 @@
 import app from "./app";
 import logger from "./utils/logger";
 
+// Fix for self-signed certificate in certificate chain
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const PORT = process.env.API_PORT || 3000;
 
-// Prevent unhandled errors from crashing the process
 process.on("unhandledRejection", (reason) => {
   logger.error(`Unhandled Rejection: ${reason}`);
 });
