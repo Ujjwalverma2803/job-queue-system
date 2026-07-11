@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: job-queue-api
+    runtime: node
+    rootDir: services/api
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: 3000
+      - key: WORKER_CONCURRENCY
+        value: 5
+
+  - type: worker
+    name: job-queue-worker
+    runtime: node
+    rootDir: services/worker
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: WORKER_CONCURRENCY
+        value: 5
