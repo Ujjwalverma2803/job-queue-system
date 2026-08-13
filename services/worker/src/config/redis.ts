@@ -1,13 +1,13 @@
-import IORedis from "ioredis";
+import IORedis, { Redis, RedisOptions } from "ioredis";
 
 const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
 const isSSL = redisUrl.startsWith("rediss://");
 
-let redis: IORedis.Redis;
+let redis: Redis;
 
 if (isSSL) {
   const url = new URL(redisUrl);
-  redis = new IORedis({
+  const options: RedisOptions = {
     host: url.hostname,
     port: parseInt(url.port) || 6379,
     password: decodeURIComponent(url.password),
@@ -15,7 +15,8 @@ if (isSSL) {
     tls: { rejectUnauthorized: false },
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
-  });
+  };
+  redis = new IORedis(options);
 } else {
   redis = new IORedis(redisUrl, {
     maxRetriesPerRequest: null,
